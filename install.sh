@@ -33,13 +33,13 @@ echo-blue "## Syncing the repos and installing packages from pkglist ##"
 echo-blue "############################################################"
 
 sudo apt update
-sudo apt install < pkglist.txt
+sudo apt-get install $(grep -vE "^\s*#" pkglist.txt  | tr "\n" " ")
 
 echo-blue "####################################"
 echo-blue "## Installing snaps from snaplist ##"
 echo-blue "####################################"
 
-sudo snap install < snaplist.txt
+sudo snap install $(grep -vE "^\s*#" snaplist.txt  | tr "\n" " ")
 
 echo-blue "#########################"
 echo-blue "## Installing homebrew ##"
@@ -52,7 +52,7 @@ echo-blue "## Installing packages outside of repo ##"
 echo-blue "#########################################"
 
 wget https://github.com/clangen/musikcube/releases/download/0.97.0/musikcube_standalone_0.97.0_x86_64.deb
-dpkg -i musikcube_standalone_0.97.0_x86_64.deb
+sudo dpkg -i musikcube_standalone_0.97.0_x86_64.deb
 sudo apt-get install -f
 rm musikcube_standalone_0.97.0_x86_64.deb
 

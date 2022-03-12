@@ -1,4 +1,5 @@
 blanket
+htop
 btop
 build-essential
 cargo
@@ -17,7 +18,7 @@ konsole
 ncal
 neofetch
 net-tools
-nodedjs
+nodejs
 procps
 python3
 ranger
