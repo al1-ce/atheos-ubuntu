@@ -1,4 +1,0 @@
-code
-cpufetch
-gifski
-onefetch

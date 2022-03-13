@@ -1,17 +1,18 @@
+arandr
 blanket
-htop
-btop
 build-essential
 cargo
 catimg
 cmake
 cmatrix
 curl
+dolphin
 exa
 file
 flatpak
 git
 golang
+htop
 kate
 kdeconnect
 konsole
@@ -21,6 +22,7 @@ net-tools
 nodejs
 procps
 python3
+python3-pip
 ranger
 snapd
 tty-clock
@@ -28,3 +30,5 @@ unzip
 vim
 wine
 winetricks
+systemsettings
+qutebrowser

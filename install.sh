@@ -28,6 +28,12 @@ while true; do
     esac
 done
 
+echo-blue "#########################"
+echo-blue "## Adding custom repos ##"
+echo-blue "#########################"
+
+sudo add-apt-repository ppa:papirus/papirus
+
 echo-blue "############################################################"
 echo-blue "## Syncing the repos and installing packages from pkglist ##"
 echo-blue "############################################################"
@@ -39,7 +45,8 @@ echo-blue "####################################"
 echo-blue "## Installing snaps from snaplist ##"
 echo-blue "####################################"
 
-sudo snap install $(grep -vE "^\s*#" snaplist.txt  | tr "\n" " ")
+chmod +x snap-install.sh
+./snap-install.sh
 
 echo-blue "#########################"
 echo-blue "## Installing homebrew ##"
@@ -52,8 +59,14 @@ echo-blue "## Installing packages outside of repo ##"
 echo-blue "#########################################"
 
 wget https://github.com/clangen/musikcube/releases/download/0.97.0/musikcube_standalone_0.97.0_x86_64.deb
+wget https://github.com/minbrowser/min/releases/download/v1.23.1/min_1.23.1_amd64.deb
+
 sudo dpkg -i musikcube_standalone_0.97.0_x86_64.deb
+sudo dpkg -i min_1.23.1_amd64.deb
+
 sudo apt-get install -f
+
+rm min_1.23.1_amd64.deb
 rm musikcube_standalone_0.97.0_x86_64.deb
 
 echo-blue "######################"
@@ -65,6 +78,7 @@ unzip CascadiaCode-2111.01.zip
 sudo mkdir -p /usr/share/fonts/truetype/cascadia
 sudo cp ttf/*ttf /usr/share/fonts/truetype/cascadia/
 rm -rf otf ttf woff2
+rm CascadiaCode-2111.01.zip
 
 echo-blue "##########################"
 echo-blue "## Installing powerline ##"
@@ -76,8 +90,9 @@ echo-blue "####################"
 echo-blue "## Installing SDK ##"
 echo-blue "####################"
 
-curl -fsS https://dlang.org/install.sh
-curl -fsS https://dot.net/v1/dotnet-install.sh
+sudo snap install --classic dmd
+sudo snap install --classic dub
+sudo snap install --classic dotnet-sdk
 
 echo-blue "#################################"
 echo-blue "## Configuring desktop display ##"
@@ -91,12 +106,28 @@ while true; do
     esac
 done
 
+while true; do
+    read -p "Do you want to set up plasma? [y/n]" yn
+    case $yn in
+        [Yy]* ) chmod +x plasma.sh; ./plasma.sh; break;;
+        [Nn]* ) break;;
+    esac
+done
+
+while true; do
+    read -p "Do you want to set up qtile? [y/n]" yn
+    case $yn in
+        [Yy]* ) chmod +x wmanager.sh; ./wmanager.sh; break;;
+        [Nn]* ) break;;
+    esac
+done
+
 echo-blue "#########################"
 echo-blue "## Configuring konsole ##"
 echo-blue "#########################"
 
-mkdir -p ~/.kde/share/config/konsole/
-cp -r konsole/ ~/.kde/share/config/konsole/
+cp -r konsole/ ~/.kde/share/config/
+cp -r konsole/ ~/.local/share/
 
 while true; do
     read -p "Do you want to change default terminal? [y/n]" yn
@@ -111,6 +142,13 @@ echo-blue "## Configuring git ##"
 echo-blue "#####################"
 
 git config --global init.defaultBranch master
+
+echo-blue "#####################"
+echo-blue "## Configuring vim ##"
+echo-blue "#####################"
+
+curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
 echo-blue "##############################"
 echo-blue "## Removing unused packages ##"
@@ -149,7 +187,7 @@ echo-blue "########################"
 echo-blue "## Configuring bashrc ##"
 echo-blue "########################"
 
-git clone git@github.com:al1-ce/dotfiles-ubuntu.git ~/.dotfiles
+git clone https://github.com/al1-ce/dotfiles-ubuntu.git ~/.dotfiles
 
 echo "source ~/.dotfiles/.bashrc" > ~/.bashrc
 echo "source ~/.dotfiles/.vimrc" > ~/.vimrc
@@ -163,6 +201,6 @@ while true; do
     read -p "Do you want to reboot? [y/n]" yn
     case $yn in
         [Yy]* ) shutdown -r 0; break;;
-        [Nn]* ) srcrc; exit;;
+        [Nn]* ) source ~/.bashrc; exit;;
     esac
 done
