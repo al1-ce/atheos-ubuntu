@@ -1,5 +1,7 @@
 #!/bin/bash
 
+~/.screenlayout/default.sh
+
 compton &
 
-nitrogen --restore &
+nitrogen --restore

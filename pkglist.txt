@@ -10,6 +10,7 @@ dolphin
 exa
 file
 flatpak
+fonts-font-awesome
 git
 golang
 htop

@@ -1,6 +1,7 @@
 
 import os
 import subprocess
+import datetime
 
 from typing import List  # noqa: F401
 
@@ -9,8 +10,12 @@ from libqtile.config import Click, Drag, Group, Key, Match, Screen, EzKey
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 
+from uptime import uptime
+
+
 mod = "mod4"
 mybrowser = "min"
+altbrowser = "google-chrome"
 terminal = guess_terminal()
 home = os.path.expanduser('~')
 spawnshortcuts = "qutebrowser " + home + "/.dotfiles/.shortcuts.html";
@@ -45,14 +50,34 @@ def focus_or_switch(group_name):
 
     return _inner
 
+@lazy.function
+def increase_vol(qtile):
+    widget_volume.cmd_increase_vol()
+
+@lazy.function
+def decrease_vol(qtile):
+    widget_volume.cmd_decrease_vol()
+
+@lazy.function
+def mute_vol(qtile):
+    widget_volume.cmd_mute()
+
 # qtile actually has an emacs style `EzKey` helper that makes specifying
 # key bindings a lot nicer than the default.
+#
+# Keys follow some "logic"
+# meta - movement, change layout and app spawn
+# meta + shift - move windows and alt versions of meta keys
+# meta + alt - group movement
+# meta + ctrl - change window size
+# meta + ctrl + alt - qtile extremes so no accidents
+#
 keys = [EzKey(k[0], *k[1:]) for k in [
     # Navigation
     # Swtich focus between panes
-    ("M-<Up>", lazy.layout.up()),
-    ("M-<Down>", lazy.layout.down()),
     ("M-<Left>", lazy.layout.left()),
+    ("M-<Down>", lazy.layout.down()),
+    ("M-<Up>", lazy.layout.up()),
     ("M-<Right>", lazy.layout.right()),
 
     ("M-h", lazy.layout.left()),
@@ -61,9 +86,9 @@ keys = [EzKey(k[0], *k[1:]) for k in [
     ("M-l", lazy.layout.right()),
 
     # Swap panes: target relative to active.
-    ("M-S-<Up>", lazy.layout.shuffle_up(), lazy.layout.section_up()),
-    ("M-S-<Down>", lazy.layout.shuffle_down(), lazy.layout.section_down()),
     ("M-S-<Left>", lazy.layout.shuffle_left(), lazy.layout.swap_left()),
+    ("M-S-<Down>", lazy.layout.shuffle_down(), lazy.layout.section_down()),
+    ("M-S-<Up>", lazy.layout.shuffle_up(), lazy.layout.section_up()),
     ("M-S-<Right>", lazy.layout.shuffle_right(), lazy.layout.swap_right()),
 
     ("M-S-h", lazy.layout.shuffle_left(), lazy.layout.swap_left()),
@@ -72,24 +97,30 @@ keys = [EzKey(k[0], *k[1:]) for k in [
     ("M-S-l", lazy.layout.shuffle_right(), lazy.layout.swap_right()),
 
     # Grow/shrink the main the focused window
-    ("M-C-<Up>", lazy.layout.grow_up()),
-    ("M-C-<Down>", lazy.layout.grow_down()),
     ("M-C-<Left>", lazy.layout.grow_left(), lazy.layout.shrink()),
+    ("M-C-<Down>", lazy.layout.grow_down()),
+    ("M-C-<Up>", lazy.layout.grow_up()),
     ("M-C-<Right>", lazy.layout.grow_right(), lazy.layout.grow()),
 
-    ("M-C-h", lazy.layout.grow_up()),
+    ("M-C-h", lazy.layout.grow_left(), lazy.layout.shrink()),
     ("M-C-j", lazy.layout.grow_down()),
-    ("M-C-k", lazy.layout.grow_left()),
-    ("M-C-l", lazy.layout.grow_right()),
+    ("M-C-k", lazy.layout.grow_up()),
+    ("M-C-l", lazy.layout.grow_right(), lazy.layout.grow()),
 
     ("M-<bracketleft>", lazy.layout.decrease_nmaster()),
     ("M-<bracketright>", lazy.layout.increase_nmaster()),
 
     # TODO meta alt
     ##Switch focus between two screens
-    ("M-A-<Left>", lazy.prev_screen()),
-    #("M-<Down>", lazy.to_screen(1)),
-    ("M-A-<Right>", lazy.next_screen()),
+    ("M-A-h", lazy.screen.prev_group()),
+    ("M-A-l", lazy.screen.next_group()),
+    ("M-A-<Left>", lazy.screen.prev_group()),
+    ("M-A-<Right>", lazy.screen.next_group()),
+    #("M-A-<Left>", lazy.to_screen(1)),
+    ("M-A-<Down>", lazy.prev_screen()),
+    ("M-A-<Up>", lazy.next_screen()),
+    ("M-A-j", lazy.prev_screen()),
+    ("M-A-k", lazy.next_screen()),
     ##Move the focused group to one of the screens and follow it
     #("M-S-<bracketleft>", switch_screens(0), lazy.to_screen(0)),
     #("M-S-<bracketright>", switch_screens(1), lazy.to_screen(1)),
@@ -102,6 +133,7 @@ keys = [EzKey(k[0], *k[1:]) for k in [
     ("M-<space>", lazy.layout.toggle_split()),
     #("M-f", lazy.prev_layout()),
     #("M-f", lazy.prev_layout()),
+
     # Applications
     ("M-<Return>", lazy.spawn(terminal)),
     ("M-<grave>", lazy.spawn("rofi -show drun")),
@@ -109,38 +141,64 @@ keys = [EzKey(k[0], *k[1:]) for k in [
     ("M-<Tab>", lazy.spawn("rofi -show")),
     ("M-e", lazy.spawn("dolphin")),
     ("M-w", lazy.spawn(mybrowser)),
+    ("M-S-w", lazy.spawn(altbrowser)),
     ("<Print>", lazy.spawn("spectacle")),
 
     # Windows
-    ("M-<Page_Down>", lazy.spawn("Qminimize -m")),
-    ("M-S-<Page_Down>", lazy.spawn("Qminimize -u")),
-    ("M-S-<Page_Up>", lazy.layout.maximize()),
-    ("M-<Page_Up>", lazy.window.toggle_fullscreen()),
     ("M-f", lazy.window.toggle_floating()),
     ("M-q", lazy.window.kill()),
     ("M-A-r", lazy.reload_config()),
     ("M-A-C-r", lazy.restart()),
+    ("M-A-C-q", lazy.shutdown()),
+    ("M-<Page_Down>", lazy.spawn("Qminimize -m")),
+    ("M-S-<Page_Down>", lazy.spawn("Qminimize -u")),
+    ("M-<Page_Up>", lazy.window.toggle_fullscreen()),
+    ("M-S-<Page_Up>", lazy.layout.maximize()),
     # Shut down qtile.
-    ("M-A-q", lazy.shutdown()),
     ("M-n", lazy.layout.normalize()),
     ("M-s", lazy.spawn("qutebrowser ~/.dotfiles/.shortcuts.html")),
 
     # Change the volume if your keyboard has special volume keys.
-    ("<XF86AudioRaiseVolume>", lazy.spawn("amixer -c 0 -q set Master 3dB+")),
-    ("<XF86AudioLowerVolume>", lazy.spawn("amixer -c 0 -q set Master 3dB-")),
-    ("<XF86AudioMute>", lazy.spawn("amixer -c 0 -q set Master toggle")),
+    ("<XF86AudioRaiseVolume>", increase_vol),
+    ("<XF86AudioLowerVolume>", decrease_vol),
+    ("<XF86AudioMute>", mute_vol),
 ]]
 
+icons = {
+    "group_www": "󰖟", # mdi-web
+    "group_sys": "󰞷", # mdi-console-line
+    "group_dev": "󰗀", # mdi-xml
+    "group_doc": "󰧮", # mdi-file-document-outline
+    "group_vbx": "󰍹", # mdi-monitor
+    "group_cht": "󰍪", # mdi-message-text-outline
+    "group_mus": "󰲸", # mdi-playlist-music
+    "group_vid": "󰯜", # mdi-video-outline
+    "group_gfx": "󰌨", # mdi-layers
+
+    "update": "󰑓", # mdi-reload
+    "disk": "󰉉", # mdi-floppy
+    "ram": "󰓡", # mdi-swap-horizontal
+    "cpu": "󰍛", # mdi-memory
+    "volume": "󰕾", # mdi-volume-high
+    "uptime": "󱕌", # mdi-sort-clock-descending-outline
+    "doomsday": "󰯈", # mdi-skull-outline
+    "calendar": "󰸗", # mdi-calendar-month
+    "clock": "󱑏", # mdi-clock-time-five-outline
+
+    "screen_focus": "󰍹", # mdi-monitor
+    "screen_nofocus": "󰶐", # mdi-monitor-off
+    }
+
 groups = [
-    Group("WWW"),
-    Group("DEV"),
-    Group("SYS"),
-    Group("DOC"),
-    Group("VBX"),
-    Group("CHT"),
-    Group("MUS"),
-    Group("VID"),
-    Group("GFX")]
+    Group("WWW", label = icons["group_www"]),
+    Group("SYS", label = icons["group_sys"]),
+    Group("DEV", label = icons["group_dev"]),
+    Group("DOC", label = icons["group_doc"]),
+    Group("VBX", label = icons["group_vbx"]),
+    Group("CHT", label = icons["group_cht"]),
+    Group("MUS", label = icons["group_mus"]),
+    Group("VID", label = icons["group_vid"]),
+    Group("GFX", label = icons["group_gfx"])]
 
 # .: Jump between groups and also throw windows to groups :. #
 for _ix, group in enumerate(groups[:9]):
@@ -149,8 +207,8 @@ for _ix, group in enumerate(groups[:9]):
 
     keys.extend([EzKey(k[0], *k[1:]) for k in [
         # M-ix = switch to that group
-        # ("M-%d" % ix, lazy.group[group.name].toscreen()),
-        ("M-%d" % ix, focus_or_switch(group.name)),
+        ("M-%d" % ix, lazy.group[group.name].toscreen()),
+        #("M-%d" % ix, focus_or_switch(group.name)),
         # M-S-ix = switch to & move focused window to that group
         ("M-S-%d" % ix, lazy.window.togroup(group.name)),
     ]])
@@ -162,15 +220,24 @@ mouse = [
     Drag([mod], "Button3", lazy.window.set_size_floating(),
          start=lazy.window.get_size()),
     Click([mod], "Button2", lazy.window.bring_to_front())
-]
+    ]
+
+def get_uptime():
+    seconds = uptime()
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return "{:.0f}:{:.0f}".format(h, m)
+
+def get_doomsday():
+    return subprocess.run([home + "/.dotfiles/doomsday-clock", "-c"], capture_output = True, text = True).stdout[:-1]
 
 layout_theme = {
     "margin": 5,
     "border_width": 2,
-    "border_focus": "#49579f",
+    "border_focus": "#c58265",
     "border_normal": "#2d3542",
-    "border_focus_stack": "#63d7b0",
-    "border_normal_stack": "#4e8f87"
+    "border_focus_stack": "#c89265",
+    "border_normal_stack": "#7d634c"
     }
 
 layouts = [
@@ -179,7 +246,7 @@ layouts = [
     layout.MonadWide(**layout_theme),
     layout.Tile(**layout_theme),
     #layout.VerticalTile(**layout_theme),
-    layout.Floating(**layout_theme),
+    #layout.Floating(**layout_theme),
     layout.Max(),
     # Try more layouts by unleashing below layouts.
     #layout.Stack(num_stacks=2, **layout_theme),
@@ -190,87 +257,155 @@ layouts = [
     # layout.Zoomy(),
 ]
 
-widget_defaults = dict(
-    font="Cascadia Mono PL",
-    fontsize=12,
-    padding=3,
-)
-extension_defaults = widget_defaults.copy()
+bar_opacity = "bb";
+bar_color = "#202020" + bar_opacity;
+icon_font = "Material Design Icons"
+
+colors = {
+    "main": "#e27100",
+    "accent": "#d8ceb8",
+    "off": "#606060",
+    }
+
+widget_defaults = {
+    "font": "Cascadia Mono PL",
+    "fontsize": 13,
+    "padding": 3,
+    "foreground": colors["accent"]
+}
 
 sep_def = {
     "linewidth": 1,
     "padding": 6
     }
 
+spacer_def = {
+    "length": 12
+    }
+
+fa_def = {
+    "foreground": colors["main"],
+    "padding": 0,
+    "font": icon_font,
+    "fontsize": 24,
+    }
+
+widget_volume = widget.PulseVolume(
+    step = 5,
+    fmt = "{}",
+    **widget_defaults
+    )
+
 def init_widgets():
     return [
-
-        widget.Sep(**sep_def),
-        widget.TextBox(
-            text="•••",
-            mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(spawnshortcuts)}
-            ),
-
-        widget.Sep(**sep_def),
         widget.GroupBox(
             disable_drag = True,
             rounded = False,
-            highlight_method = "block"
+            highlight_method = "block",
+            active = colors["main"],
+            inactive = colors["off"],
+            this_current_screen_border = "#404040" + bar_opacity,
+            other_current_screen_border = "#202020" + "22",
+            this_screen_border = "#404040" + bar_opacity,
+            other_screen_border = "#202020" + "22",
+            **fa_def
             ),
 
-        widget.Sep(**sep_def),
-        widget.WindowName(parse_text = lambda text: text.rsplit("— ", 1)[1]),
+        widget.WindowName(
+            **widget_defaults,
+            parse_text = lambda text: text.rsplit("— ", 1)[1]
+            ),
 
-        widget.Sep(**sep_def),
+        widget.TextBox( **fa_def, text = icons["update"] ),
         widget.CheckUpdates(
+            **widget_defaults,
             distro = "Ubuntu",
             update_interval = 1800,
             display_format = "{updates}",
             no_update_string = "  0",
-            fmt = "Upd: {}"
+            mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(terminal + ' --separate --hold -e apt list --upgradable')},
+            colour_have_updates = colors["accent"],
+            colour_no_updates = colors["off"],
             ),
 
-        widget.Sep(**sep_def),
+        widget.Spacer(**spacer_def),
+        widget.TextBox( **fa_def, text = icons["disk"] ),
+        widget.DF(
+            **widget_defaults,
+            format="{r:2.0f}%",
+            mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(terminal + ' --separate -e btop')},
+            visible_on_warn = False
+            ),
+
+        widget.Spacer(**spacer_def),
+        widget.TextBox( **fa_def, text = icons["ram"] ),
         widget.Memory(
-            format="{MemUsed: .0f}{mm}/{MemTotal: .0f}{mm}",
+            format="{MemPercent:2.0f}%",
             mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(terminal + ' --separate -e btop')},
-            fmt="Mem: {}"
             ),
 
-        widget.Sep(**sep_def),
+        widget.Spacer(**spacer_def),
+        widget.TextBox( **fa_def, text = icons["cpu"] ),
         widget.CPU(
-            format="{load_percent}%",
+            **widget_defaults,
+            format="{load_percent:2.0f}%",
             mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(terminal + ' --separate -e btop')},
-            fmt="CPU: {}"
             ),
 
-        widget.Sep(**sep_def),
-        widget.Volume(
-            step = 5,
-            fmt = "Vol: {}"
+        widget.Spacer(**spacer_def),
+        widget.TextBox( **fa_def, text = icons["volume"] ),
+        widget_volume,
+
+        widget.Spacer(**spacer_def),
+        widget.TextBox( **fa_def, text = icons["uptime"] ),
+        widget.GenPollText(
+            **widget_defaults,
+            func = get_uptime,
+            update_interval = 60
             ),
 
-        widget.Sep(**sep_def),
-        widget.Clock(format="Time: %H:%M:%S"),
+        widget.Spacer(**spacer_def),
+        widget.TextBox( **fa_def, text = icons["doomsday"] ),
+        widget.GenPollText(
+            **widget_defaults,
+            func = get_doomsday,
+            update_interval = 60 * 60 * 6
+            ),
 
-        widget.Sep(**sep_def),
-        widget.Systray(),
-        #widget.CurrentLayout(),
+        widget.Spacer(**spacer_def),
+        widget.TextBox( **fa_def, text = icons["calendar"] ),
+        widget.Clock(
+            **widget_defaults,
+            format="%d/%m",
+            mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(terminal + ' --separate --hold -e ncal -yMb')},
+            ),
 
-        widget.Sep(**sep_def),
+        widget.Spacer(**spacer_def),
+        widget.TextBox( **fa_def, text = icons["clock"] ),
+        widget.Clock(
+            **widget_defaults,
+            format="%H:%M:%S",
+            mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(terminal + ' --separate --hold -e ncal -yMb')},
+            ),
+
+        widget.Spacer(**spacer_def),
+        widget.CurrentScreen(
+            **fa_def,
+            active_text = icons["screen_focus"],
+            inactive_text = icons["screen_nofocus"],
+            active_color = colors["main"],
+            inactive_color = colors["off"],
+            ),
+        widget.Spacer(**spacer_def),
         ]
 
-def get_widgets_notray():
-    wid = init_widgets()
-    del wid[16:18]
-    return wid
 
 # should be:
 # | *** | DEV | Window Name                       Upd:  45 | Mem:  53% | CPU:   3% | Doom | Up | Time | V |
 screens = [
-    Screen( top=bar.Bar(widgets=get_widgets_notray(), size=20) ),
-    Screen( top=bar.Bar(widgets=init_widgets(), size=20) ),
-    Screen( top=bar.Bar(widgets=get_widgets_notray(), size=20) ),
+    Screen( top = bar.Bar(widgets = init_widgets(), size = 24, background = bar_color) ),
+    Screen( top = bar.Bar(widgets = init_widgets(), size = 24, background = bar_color) ),
+    Screen( top = bar.Bar(widgets = init_widgets(), size = 24, background = bar_color) ),
 ]
 
 dgroups_key_binder = None
@@ -308,7 +443,18 @@ auto_minimize = True
 # java that happens to be on java's whitelist.
 wmname = "LG3D"
 
+@hook.subscribe.startup
+def set_screen_groups():
+    # left center right = 2 0 1
+    screens[2].set_group(groups[0], warp = False)
+    screens[0].set_group(groups[1], warp = False)
+    screens[1].set_group(groups[2], warp = False)
+
 @hook.subscribe.startup_once
 def start_once():
     subprocess.call([home + '/.config/qtile/autostart.sh'])
 
+@hook.subscribe.client_new
+def func(c):
+    if c.name == "Desktop — Plasma":
+        c.cmd_kill()

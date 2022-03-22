@@ -79,6 +79,8 @@ sudo mkdir -p /usr/share/fonts/truetype/cascadia
 sudo cp ttf/*ttf /usr/share/fonts/truetype/cascadia/
 rm -rf otf ttf woff2
 rm CascadiaCode-2111.01.zip
+sudo mkdir -p /usr/share/fonts/otf/fontawesome
+sudo cp fontawesome/*otf /usr/share/fonts/otf/fontawesome/
 
 echo-blue "##########################"
 echo-blue "## Installing powerline ##"
