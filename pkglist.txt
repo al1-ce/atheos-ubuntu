@@ -33,3 +33,5 @@ wine
 winetricks
 systemsettings
 qutebrowser
+gpick
+kde-spectacle
