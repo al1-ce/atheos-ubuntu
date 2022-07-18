@@ -1,5 +1,4 @@
 arandr
-blanket
 build-essential
 cargo
 catimg
