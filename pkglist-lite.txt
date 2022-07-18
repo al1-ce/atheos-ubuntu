@@ -5,7 +5,6 @@ catimg
 cmake
 cmatrix
 curl
-dolphin
 exa
 file
 flatpak
@@ -13,9 +12,6 @@ fonts-font-awesome
 git
 golang
 htop
-kate
-kdeconnect
-konsole
 ncal
 neofetch
 net-tools
@@ -28,9 +24,3 @@ snapd
 tty-clock
 unzip
 vim
-wine
-winetricks
-systemsettings
-qutebrowser
-gpick
-kde-spectacle
